@@ -1,0 +1,6 @@
+[
+	{
+		"sql": "select a, b, c from tab1, tab2",
+		"sparql": "select ?a ?b ?c { ?a <p1> ?b . ?b <p2> ?c}"
+	}
+]
