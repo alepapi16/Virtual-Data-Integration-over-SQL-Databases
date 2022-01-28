@@ -109,7 +109,17 @@ public class Rewriter {
 			select = select.concat("1");
 		else { // sparql boolean select
 			for (int i = 0; i < q.arity(); i++) {
-				select = select.concat(q.target().get(i).getName());
+				String name = q.target().get(i).getName();
+				try {
+					Integer.parseInt(name);
+				} catch (NumberFormatException e) { // not an Integer
+					try {
+						Float.parseFloat(name);
+					} catch (NumberFormatException e2) { // not a Float
+						name = "'"+name+"'";
+					}
+				}
+				select = select.concat(name);
 				select = (i == q.arity() - 1) ? select.concat(" ") : select.concat(", ");
 			}
 		}
@@ -150,7 +160,17 @@ public class Rewriter {
 			select = select.concat("1");
 		else { // sparql boolean select
 			for (int i = 0; i < q.arity(); i++) {
-				select = select.concat(q.target().get(i).getName());
+				String name = q.target().get(i).getName();
+				try {
+					Integer.parseInt(name);
+				} catch (NumberFormatException e) { // not an Integer
+					try {
+						Float.parseFloat(name);
+					} catch (NumberFormatException e2) { // not a Float
+						name = "'"+name+"'";
+					}
+				}
+				select = select.concat(name);
 				select = (i == q.arity() - 1) ? select.concat(" ") : select.concat(", ");
 			}
 		}

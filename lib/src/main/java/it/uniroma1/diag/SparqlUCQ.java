@@ -34,10 +34,12 @@ public class SparqlUCQ {
 				Var v = q.getProjectVars().get(i);
 				
 				if(v.getName().startsWith(".")) { // ARQ format for constants
-					String literal = q.toString() // the literal shall be taken from query string directly
-							.split(System.getProperty("line.separator"))[0] // only pick select clause
-							.split(" ")[i+2]; // and get the i-th return value
-					literal = literal.replaceAll("[^a-zA-Z0-9]", ""); // remove non alphanumeric characters
+					String[] literals = q.toString() // the literal shall be taken from query string directly
+							.split(System.getProperty("line.separator")); // only pick select clause
+					String literal = "";
+					for(int j=0; j<literals.length; j++)
+						if(literals[j].startsWith("SELECT"))
+							literal = literals[j].split(" ")[i+2].replaceAll("[^a-zA-Z0-9.]", ""); // remove non alphanumeric characters
 					target.add(new Node(literal, NodeType.CONSTANT));
 				}
 				else {

@@ -1,6 +1,8 @@
 [
 	{
-		"sql": "select a, b, c from tab1, tab2",
-		"sparql": "select ?a ?b ?c { ?a <p1> ?b . ?b <p2> ?c}"
+		"sql": 
+				"select a, b, c from tab1, tab2",
+		"sparql": 
+				"PREFIX d: <http://www.w3.org/2000/10/annotation-ns#> SELECT ?a ?b ?c WHERE { ?a d:p1 ?b }"
 	}
 ]

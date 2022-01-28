@@ -82,31 +82,18 @@ public class Resolvent {
 
 		String select = "SELECT "; // SELECT CLAUSE
 		for (int i = 0; i < q.arity(); i++) {
-			Node x = q.target().get(i);
-			
-			if(x.isConstant()) {
-				select = select.concat(x.getName());
+			String name = q.target().get(i).getName();
+			try {
+				Integer.parseInt(name);
+			} catch (NumberFormatException e) { // not an Integer
+				try {
+					Float.parseFloat(name);
+				} catch (NumberFormatException e2) { // not a Float
+					name = "'"+name+"'";
+				}
 			}
-//			else if(x.isVariable()) { // proposal for supporting free variables
-//				int j = splitMap.get(x).get(0); // get first chunk index in C where x occurs
-//				Unifier u = U.get(j);
-//				SparqlCQ h = u.getH();
-//				Node u_x = u.get(x);
-//	
-//				for (Node y : h.target()) {
-//					if (u.get(y).equals(u_x)) {
-//						String var = y.getName();
-//						String alias = "A" + (i + 1);
-//						select = select.concat(var + " " + alias);
-//						break;
-//					}
-//				}
-//			}
-
-			if (i == q.arity() - 1)
-				select = select.concat(" ");
-			else
-				select = select.concat(", ");
+			select = select.concat(name);
+			select = (i == q.arity() - 1) ? select.concat(" ") : select.concat(", ");
 		}
 		if (q.arity() == 0) // "ask" sparql query
 			select = select.concat("1 ");
