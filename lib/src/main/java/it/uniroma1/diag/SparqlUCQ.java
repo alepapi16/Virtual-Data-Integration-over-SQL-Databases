@@ -54,12 +54,23 @@ public class SparqlUCQ {
 			List<Element> disjuncts = ((ElementUnion) base).getElements();
 			for(Element e : disjuncts) {
 				ElementGroup eg = (ElementGroup) e;
-				List<TriplePath> triples = ((ElementPathBlock) eg.getLast()).getPattern().getList();
+				if(eg.size() != 1)
+					throw new ParserException("Unexpected size of some disjunct.");
+				if(!(eg.getLast() instanceof ElementPathBlock))
+					throw new ParserException("Unexpected pattern in some disjunct.");
+				ElementPathBlock epb = (ElementPathBlock) eg.getLast();
+				List<TriplePath> triples = epb.getPattern().getList();
 				cqs.add(new SparqlCQ(triples, target, isBoolean));
 			}
 		}
 		else if (base instanceof ElementGroup) { // CQ (ElementGroup)
-			List<TriplePath> triples = ((ElementPathBlock)((ElementGroup)base).getLast()).getPattern().getList();
+			ElementGroup eg = (ElementGroup) base;
+			if(eg.size() != 1)
+				throw new ParserException("Unexpected size of disjunct.");
+			if(!(eg.getLast() instanceof ElementPathBlock))
+				throw new ParserException("Unexpected pattern in disjunct.");
+			ElementPathBlock epb = (ElementPathBlock) eg.getLast();
+			List<TriplePath> triples = epb.getPattern().getList();
 			cqs.add(new SparqlCQ(triples, target, isBoolean));
 		}
 		else { // CQ (ElementPathBlock)

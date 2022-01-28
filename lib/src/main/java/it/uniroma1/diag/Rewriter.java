@@ -100,46 +100,37 @@ public class Rewriter {
 	 * @return
 	 */
 	private static String concatenateBooleanSqlRewritings(List<String> rewritings, SparqlUCQ q) {
+		
+		if (rewritings.size() == 0) return "";
 
-		if (rewritings.size() == 0)
-			return "";
-		if (rewritings.size() == 1)
-			return rewritings.get(0);
-		// rewritings.size() >= 2 then...
-
-		String select = "", select_arg = ""; // SELECT CLAUSE
-		if (q.arity() == 0)
-			select = "SELECT 1".concat(System.getProperty("line.separator"));
-		else {
+		// SELECT clause
+		String select = "SELECT ";
+		if (q.arity() == 0) // sparql ask query
+			select = select.concat("1");
+		else { // sparql boolean select
 			for (int i = 0; i < q.arity(); i++) {
-				Node x = q.target().get(i);
-				
-				if(x.isConstant()) select_arg = select_arg.concat(x.getName());
-//				else if(x.isVariable()) { // proposal for supporting free variables
-//					String alias = "A" + (i + 1);
-//					select_arg = select_arg.concat(alias);
-//				}
-
-				if (i == q.arity() - 1) select_arg = select_arg.concat(" ");
-				else select_arg = select_arg.concat(", ");
+				select = select.concat(q.target().get(i).getName());
+				select = (i == q.arity() - 1) ? select.concat(" ") : select.concat(", ");
 			}
-			select = "SELECT ".concat(select_arg).concat(System.getProperty("line.separator"));
+		}
+		select = select.concat(System.getProperty("line.separator"));
+
+		// FROM clause
+		String from = "FROM ".concat(System.getProperty("line.separator")), from_arg = rewritings.get(0).concat(" CQ1 ");
+		
+		if(rewritings.size() == 1) {
+			from_arg = "(" + from_arg + ")";
+		}
+		else {
+			for (int i = 1; i < rewritings.size(); i++)
+				from_arg = "(" + from_arg
+					+ System.getProperty("line.separator")
+					+ "UNION"
+					+ System.getProperty("line.separator")
+					+ rewritings.get(i) + " CQ"+(i+1) + ")";
 		}
 
-		String from = "FROM ".concat(System.getProperty("line.separator")), from_arg = "";
-		from_arg = "(" + rewritings.get(0)
-			.concat(System.getProperty("line.separator"))
-			.concat("UNION")
-			.concat(System.getProperty("line.separator"))
-			.concat(rewritings.get(1)) + ")";
-		for (int i = 2; i < rewritings.size(); i++)
-			from_arg = "(" + from_arg
-				.concat(System.getProperty("line.separator"))
-				.concat("UNION")
-				.concat(System.getProperty("line.separator"))
-				.concat(rewritings.get(i)) + ")";
-
-		return select.concat(from).concat(from_arg);
+		return select.concat(from).concat(from_arg).concat(" UCQ1;");
 	}
 
 	/**
@@ -151,52 +142,33 @@ public class Rewriter {
 	 */
 	private static String concatenateBooleanSqlRewritings(List<String> rewritings, SparqlCQ q) {
 		
-		if (rewritings.size() == 0)
-			return "";
-		if (rewritings.size() == 1)
-			return rewritings.get(0);
-		// rewritings.size() >= 2 then...
-
-		String select = "", select_arg = ""; //, where = "", where_arg = ""; // SELECT and WHERE CLAUSES
-
-		if (q.arity() == 0) 
-			select = "SELECT 1".concat(System.getProperty("line.separator"));
-		else {
-			for (int i=0; i < q.arity(); i++) {
-				Node x = q.target().get(i);
-				
-				if(x.isConstant()) select_arg = select_arg.concat(x.getName());
-//				else if(x.isVariable()) { // proposal for supporting free variables
-//					String alias = "A" + (i + 1);
-//					select_arg = select_arg.concat(alias);
-//					where_arg = where_arg.concat(alias + " NOTNULL");
-				
-//					if (i == q.arity() - 1) where_arg = where_arg.concat(" ");
-//					else where_arg = where_arg.concat(", ");
-//				}
-
-				if (i == q.arity() - 1) select_arg = select_arg.concat(" ");
-				else select_arg = select_arg.concat(", ");
-			}
-			select = "SELECT ".concat(select_arg).concat(System.getProperty("line.separator"));
-//			if(!q.isBoolean()) where = "WHERE ".concat(where_arg); // proposal for supporting free variables
-		}
+		if (rewritings.size() == 0) return "";
 		
-		String from = "FROM ".concat(System.getProperty("line.separator")); // FROM CLAUSE
-		String from_arg = "(" + rewritings.get(0)
-			.concat(System.getProperty("line.separator"))
-			.concat("UNION")
-			.concat(System.getProperty("line.separator"))
-			.concat(rewritings.get(1)) + ")";
-			
-		for (int i = 2; i < rewritings.size(); i++)
-			from_arg = "(" + from_arg
-				.concat(System.getProperty("line.separator"))
-				.concat("UNION")
-				.concat(System.getProperty("line.separator"))
-				.concat(rewritings.get(i)) + ")";
+		// SELECT clause
+		String select = "SELECT ";
+		if (q.arity() == 0) // sparql ask query
+			select = select.concat("1");
+		else { // sparql boolean select
+			for (int i = 0; i < q.arity(); i++) {
+				select = select.concat(q.target().get(i).getName());
+				select = (i == q.arity() - 1) ? select.concat(" ") : select.concat(", ");
+			}
+		}
+		select = select.concat(System.getProperty("line.separator"));
+		
+		// FROM clause
+		String from = "FROM ".concat(System.getProperty("line.separator")), from_arg = rewritings.get(0);
+		if(rewritings.size() == 1) from_arg = "(" + from_arg + ")";
+		else {
+			for (int i = 1; i < rewritings.size(); i++)
+				from_arg = "(" + from_arg
+					.concat(System.getProperty("line.separator"))
+					.concat("UNION")
+					.concat(System.getProperty("line.separator"))
+					.concat(rewritings.get(i)) + ")";
+		}
 
-		return select.concat(from).concat(from_arg);//.concat(where);
+		return select.concat(from).concat(from_arg);
 	}
 
 	

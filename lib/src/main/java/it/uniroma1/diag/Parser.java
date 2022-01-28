@@ -163,15 +163,14 @@ public class Parser {
 		ElementGroup eg = (ElementGroup) q.getQueryPattern();
 
 		// check query is conjunctive
-		if (!(eg.getElements().size() == 1))
+		if (eg.getElements().size() != 1)
 			throw new ParserException(err_msg.concat("unexpected size of WHERE pattern in query."));
 
 		// check WHERE tokens are not out of our fragment of interest (only made of RDF triples)
 		if (!(eg.getLast() instanceof ElementPathBlock || 
 				eg.getLast() instanceof ElementUnion || 
-				(eg.getLast() instanceof ElementGroup && 
-						((ElementGroup)eg.getLast()).getLast() instanceof ElementPathBlock))) {
-			throw new ParserException(err_msg.concat("unexpected WHERE pattern in query."));
+				eg.getLast() instanceof ElementGroup)) {
+			throw new ParserException(err_msg.concat("Unexpected WHERE pattern in query."));
 		}
 		
 		return new SparqlUCQ(q);

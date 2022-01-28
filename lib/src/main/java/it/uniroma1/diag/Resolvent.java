@@ -142,7 +142,7 @@ public class Resolvent {
 				SparqlCQ h_j = M.get(U.get(j).getAssertionNumber()).getHead();
 				Node b = findTwin(u_j.getHeadChunk(), h_j, u_j, u_j.get(x)); // find b ∈ h_j[d_j] : U[j](b) == U[j](x)
 
-				conds.add("V" + (i + 1) + "." + a + " = " + "V" + (j + 1) + "." + b);
+				conds.add("V" + (i+1) + "." + a.getName() + " = " + "V" + (j+1) + "." + b.getName());
 			}
 		}
 
