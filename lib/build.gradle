@@ -57,14 +57,15 @@ tasks.named('jar') {
 	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     manifest {
         attributes('Implementation-Title': project.name,
-                   'Implementation-Version': project.version)
+                   'Implementation-Version': project.version,
+                   'Main-Class': 'it.uniroma1.diag.examples.Main')
     }
     
-    excludes = ['it/uniroma1/diag/examples']
+    //excludes = ['it/uniroma1/diag/examples']
     from sourceSets.main.output
     from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
 }
 
+// Run Library with gradle run
 apply plugin: 'application'
-
 mainClassName = 'it.uniroma1.diag.examples.Main'

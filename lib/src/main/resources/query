@@ -1,5 +1,2 @@
-PREFIX d: <http://www.w3.org/2000/10/annotation-ns#> 
 
-select 'a' where {
-	{?x d:p1 ?y}
-}
+select 1 where { {?x <p1> ?y . ?y <p2> ?z} union {?y <p2> ?z} }
