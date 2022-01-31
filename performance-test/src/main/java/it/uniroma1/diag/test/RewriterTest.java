@@ -1,4 +1,4 @@
-package it.uniroma1.diag;
+package it.uniroma1.diag.test;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,12 +13,20 @@ import java.util.TreeMap;
 import org.gibello.zql.ZQuery;
 import org.gibello.zql.ZSelectItem;
 
+import it.uniroma1.diag.Assertion;
+import it.uniroma1.diag.Atom;
+import it.uniroma1.diag.Node;
+import it.uniroma1.diag.Resolvent;
+import it.uniroma1.diag.SparqlCQ;
+import it.uniroma1.diag.SparqlUCQ;
+import it.uniroma1.diag.Unifier;
 import it.uniroma1.diag.exceptions.RewriteException;
 
-public class Rewriter {
+public class RewriterTest {
 	private static int renaming_n;
 	private static TreeMap<String, String> renaming_dict;
 	private static HashMap<List<Integer>, Set<Unifier>> C_MGUs;
+	
 	
 	/**
 	 * Returns the string representation of the SQL reformulation of a UCQ q against M.
@@ -27,14 +35,14 @@ public class Rewriter {
 	 * @return
 	 * @throws RewriteException
 	 */
-	public static String rewriteBoolean(List<Assertion> M, SparqlUCQ Q) throws RewriteException {
+	public static int rewriteBoolean(List<Assertion> M, SparqlUCQ Q) throws RewriteException {
 		
 		if(!Q.isBoolean()) throw new RewriteException("The provided query is not Boolean.");
 		
-		Set<String> rewritings = new HashSet<String>();
+		int res = 0;
 		for (SparqlCQ q : Q.disjuncts())
-			rewritings.add(rewriteBoolean(M, q)); // collect all unf(q,M)
-		return concatenateBooleanSqlRewritings(new ArrayList<>(rewritings), Q); // produce unf(Q,M) and return
+			res += rewriteBoolean(M, q); // collect all unf(q,M)
+		return res; // produce unf(Q,M) and return
 	}
 	
 	/**
@@ -44,7 +52,7 @@ public class Rewriter {
 	 * @return
 	 * @throws RewriteException
 	 */
-	public synchronized static String rewriteBoolean(List<Assertion> M, SparqlCQ q) throws RewriteException {
+	public synchronized static int rewriteBoolean(List<Assertion> M, SparqlCQ q) throws RewriteException {
 
 		if(!q.isBoolean()) throw new RewriteException("The provided query is not Boolean.");
 		
@@ -80,117 +88,16 @@ public class Rewriter {
 			String rew_q = r.unfold(M); // unf(q,M,C,U)
 			R_sql.add(rew_q);
 
-			System.out.println("\nUnfolding " + (i + 1) + ":");
-			System.out.print(r);
-			System.out.println("Rewriting:\n" + rew_q);
+//			System.out.println("\nUnfolding " + (i + 1) + ":");
+//			System.out.print(r);
+//			System.out.println("Rewriting:\n" + rew_q);
 		}
-		System.out.println();
 
 		ArrayList<String> R_sql_list = new ArrayList<String>(R_sql);
 		Collections.sort(R_sql_list);
-		return concatenateBooleanSqlRewritings(R_sql_list, q); // produce unf(q,M) and return
+		return R_sql_list.size(); // produce unf(q,M) and return
 	}
 
-	/**
-	 * Given the set {unf(q,M)} for all disjuncts q of a UCQ Q, produce unf(Q,M), i.e., 
-	 * the unfolding of UCQ Q wrt M.
-	 * @param rewritings List of unfoldings unf(q,M)
-	 * @param q_arity The arity of Q
-	 * @return
-	 */
-	private static String concatenateBooleanSqlRewritings(List<String> rewritings, SparqlUCQ q) {
-		
-		if (rewritings.size() == 0) return "";
-
-		// SELECT clause
-		String select = "SELECT ";
-		if (q.arity() == 0) // sparql ask query
-			select = select.concat("1");
-		else { // sparql boolean select
-			for (int i = 0; i < q.arity(); i++) {
-				String name = q.target().get(i).getName();
-				try {
-					Integer.parseInt(name);
-				} catch (NumberFormatException e) { // not an Integer
-					try {
-						Float.parseFloat(name);
-					} catch (NumberFormatException e2) { // not a Float
-						name = "'"+name+"'";
-					}
-				}
-				select = select.concat(name);
-				select = (i == q.arity() - 1) ? select.concat(" ") : select.concat(", ");
-			}
-		}
-		select = select.concat(System.getProperty("line.separator"));
-
-		// FROM clause
-		String from = "FROM ".concat(System.getProperty("line.separator")), from_arg = rewritings.get(0).concat(" CQ1 ");
-		
-		if(rewritings.size() == 1) {
-			from_arg = "(" + from_arg + ")";
-		}
-		else {
-			for (int i = 1; i < rewritings.size(); i++)
-				from_arg = "(" + from_arg
-					+ System.getProperty("line.separator")
-					+ "UNION"
-					+ System.getProperty("line.separator")
-					+ rewritings.get(i) + " CQ"+(i+1) + ")";
-		}
-
-		return select.concat(from).concat(from_arg).concat(" UCQ1;");
-	}
-
-	/**
-	 * Given the set unf(q,M,C,U) for all possible C,U, produce unf(q,M), i.e., 
-	 * the set of all unfoldings of q wrt M.
-	 * @param rewritings unf(q,M,C,U)
-	 * @param q_arity The arity of q
-	 * @return
-	 */
-	private static String concatenateBooleanSqlRewritings(List<String> rewritings, SparqlCQ q) {
-		
-		if (rewritings.size() == 0) return "";
-		
-		// SELECT clause
-		String select = "SELECT ";
-		if (q.arity() == 0) // sparql ask query
-			select = select.concat("1");
-		else { // sparql boolean select
-			for (int i = 0; i < q.arity(); i++) {
-				String name = q.target().get(i).getName();
-				try {
-					Integer.parseInt(name);
-				} catch (NumberFormatException e) { // not an Integer
-					try {
-						Float.parseFloat(name);
-					} catch (NumberFormatException e2) { // not a Float
-						name = "'"+name+"'";
-					}
-				}
-				select = select.concat(name);
-				select = (i == q.arity() - 1) ? select.concat(" ") : select.concat(", ");
-			}
-		}
-		select = select.concat(System.getProperty("line.separator"));
-		
-		// FROM clause
-		String from = "FROM ".concat(System.getProperty("line.separator")), from_arg = rewritings.get(0);
-		if(rewritings.size() == 1) from_arg = "(" + from_arg + ")";
-		else {
-			for (int i = 1; i < rewritings.size(); i++)
-				from_arg = "(" + from_arg
-					.concat(System.getProperty("line.separator"))
-					.concat("UNION")
-					.concat(System.getProperty("line.separator"))
-					.concat(rewritings.get(i)) + ")";
-		}
-
-		return select.concat(from).concat(from_arg);
-	}
-
-	
 	
 	/**
 	 * Lists all possible subsets of the set consisting of the first n integers.
@@ -209,7 +116,6 @@ public class Rewriter {
 		}
 		return cs;
 	}
-	
 	
 	private static List<Resolvent> genResolvents(List<List<Integer>> C, SparqlCQ q) {
 		List<Resolvent> Rs_C = new ArrayList<>();
@@ -242,7 +148,7 @@ public class Rewriter {
 
 		return Rs_C;
 	}
-
+	
 	public static List<List<List<Integer>>> genPartitions(int n) {
 		List<Integer> todo = new ArrayList<>();
 		for (int i = 0; i < n; i++)
@@ -287,7 +193,6 @@ public class Rewriter {
 		return res;
 	}
 
-
 	private static List<List<Integer>> copy_of(List<List<Integer>> B) {
 		List<List<Integer>> res = new ArrayList<>();
 		for (List<Integer> C : B) {
@@ -296,15 +201,14 @@ public class Rewriter {
 		return res;
 	}
 
-	
-	
+		
 	/**
 	 * Check that all predicates always have the same arity.
 	 * @param M
 	 * @param q
 	 * @throws RewriteException
 	 */
-	private static void checkArities(List<Assertion> M, SparqlCQ q) throws RewriteException {
+	static void checkArities(List<Assertion> M, SparqlCQ q) throws RewriteException {
 		Map<Node, Boolean> arityMap = new HashMap<>();
 		List<SparqlCQ> L = new LinkedList<>();
 
@@ -322,7 +226,6 @@ public class Rewriter {
 		}
 	}
 
-	
 	/**
 	 * Check that all predicates in q are also in M
 	 * 
@@ -341,8 +244,7 @@ public class Rewriter {
 			throw new RewriteException("Some predicate in query is not defined in any mapping assertion.");
 		}
 	}
-	
-	
+		
 
 	private static List<Assertion> renameVars(List<Assertion> M) throws RewriteException {
 		for (int i = 0; i < M.size(); i++) { // rename mapping
@@ -352,7 +254,6 @@ public class Rewriter {
 		}
 		return M;
 	}
-
 
 	private static SparqlCQ renameVars(SparqlCQ q) throws RewriteException {
 		renaming_dict = new TreeMap<>(); // reset dictionary
@@ -385,7 +286,6 @@ public class Rewriter {
 		return q;
 	}
 
-
 	private static ZQuery renameVars(ZQuery q) {
 		for (int i = 0; i < q.getSelect().size(); i++) {
 			ZSelectItem att = (ZSelectItem) q.getSelect().get(i);
@@ -396,8 +296,6 @@ public class Rewriter {
 		return q;
 	}
 
-	
-	
 	/**
 	 * Finds the set U of all unifiers u such that ∀d ∈ h : u(q[c]) = u(h[d])
 	 * @param c A chunk in q

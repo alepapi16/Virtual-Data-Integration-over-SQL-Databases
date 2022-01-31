@@ -9,3 +9,4 @@
 
 rootProject.name = 'thesis'
 include('lib')
+include('performance-test')
